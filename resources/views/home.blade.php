@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products and Stocks</title>
+    <title>Gestion des Stocks</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,40 +16,15 @@
             color: #333;
         }
 
-        form {
+        .menu {
             margin-bottom: 20px;
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        label {
+        .menu a {
+            margin-right: 20px;
+            text-decoration: none;
             font-weight: bold;
-            margin-right: 10px;
-        }
-
-        input[type="text"], input[type="number"], select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0 20px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #45a049;
+            color: #333;
         }
 
         table {
@@ -74,176 +49,237 @@
             background-color: #f9f9f9;
         }
 
-        .actions button {
-            background-color: #f44336;
-            color: white;
-            padding: 5px 10px;
+        input[type="text"], input[type="number"], select {
+            width: 100%;
             border: none;
+            background-color: transparent;
+            text-align: left;
+            outline: none;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            background-color: #e8f0fe;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
             cursor: pointer;
             border-radius: 4px;
         }
 
-        .actions button:hover {
-            background-color: #e53935;
+        button:hover {
+            background-color: #45a049;
         }
 
-        .filter {
+        .depot-container {
+            display: flex;
+            gap: 20px;
             margin-bottom: 20px;
         }
 
-        .filter label {
-            font-weight: normal;
+        .depot-box {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .sizes-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .size-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .size-column input {
+            width: 60px;
+        }
+
+        .add-size-btn {
+            background-color: #008CBA;
+        }
+
+        .remove-size-btn {
+            background-color: #f44336;
         }
     </style>
 </head>
 <body>
 
-    <h1>Manage Products and Stocks</h1>
+    <h1>Gérer Stock et Vêtements</h1>
 
-    <!-- Formulaire pour ajouter une catégorie -->
-    <h2>Add a Category</h2>
-    <form action="{{ route('categories.store') }}" method="POST">
-        @csrf
-        <label for="category_name">Nom de la catégorie:</label>
-        <input type="text" name="name" id="category_name" required>
-        <button type="submit">>Ajouter la catégorie</button>
-    </form>
-        <!-- Liste des catégories -->
-        <div class="col-md-6">
-                <h3>Liste des catégories</h3>
-                @if(session('success'))
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
-                @endif
-                <ul class="list-group">
-                    @foreach($categories as $category)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ $category->name }}
-                            <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="ml-2">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                            </form>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-    <!-- Formulaire pour ajouter un produit -->
-    <h2>Add a New Product</h2>
-    <form action="{{ route('products.store') }}" method="POST">
-    @csrf
-    <div class="form-group">
-        <label for="name">Nom du produit</label>
-        <input type="text" class="form-control" id="name" name="name" required>
+    <div class="menu">
+        <a href="#chaussures">Chaussures</a>
+        <a href="#tshirts">T-shirts</a>
+        <a href="#pulls">Pulls</a>
     </div>
 
-    <div class="form-group">
-        <label for="price">Prix</label>
-        <input type="number" step="0.01" class="form-control" id="price" name="price" required>
-    </div>
-
-    <div class="form-group">
-        <label for="category">Catégorie</label>
-        <select class="form-control" id="category" name="category_id" required>
-            <option value="">Sélectionner une catégorie</option>
-            @foreach($categories as $category)
-                <option value="{{ $category->id }}">{{ $category->name }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <!-- Champ de taille -->
-    <div class="form-group">
-        <label for="size">Taille (S, M, 32, 34, etc.)</label>
-        <input type="text" class="form-control" id="size" name="size" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Ajouter le produit</button>
-</form>
-
-
-    <!-- Liste des produits avec filtre -->
-    <h2>Product List</h2>
-    <div class="filter">
-        <label for="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter">
-            <option value="">All Categories</option>
-            @foreach($categories as $category)
-                <option value="{{ $category->id }}">{{ $category->name }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <table>
+    <!-- Product Management Table -->
+    <h2 id="chaussures">Chaussures</h2>
+    <table id="products-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Category</th>
-                <th>Size</th>
-                <th>Stock</th>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Categorie</th>
+                <th>Taille</th>
+                <th>Stock par dépôt</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach($products as $product)
-                <tr data-category-id="{{ $product->category->id }}">
-                    <td>{{ $product->name }}</td>
-                    <td>${{ $product->price }}</td>
-                    <td>{{ $product->category->name }}</td>
-                    <td>{{ $product->size }}</td>
-                    <td>
-                        <!-- Formulaire pour mettre à jour le stock -->
-                        <form action="{{ route('stock.update', $product->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('PATCH') <!-- Utilisation de PATCH pour la mise à jour -->
-                            <input type="number" name="quantity" value="{{ $product->stock ? $product->stock->quantity : 0 }}" required min="0" style="width: 60px;">
-                            <button type="submit">Update Stock</button>
-                        </form>
-                    </td>
-                    <td class="actions">
-                        <form action="{{ route('products.destroy', $product->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit">Delete</button>
-                        </form>
-                    </td>
-                </tr>
+            <tr data-product-id="{{ $product->id }}">
+                <td>
+                    <input type="text" value="{{ $product->name }}" class="editable" data-column="name">
+                </td>
+                <td>
+                    <input type="number" value="{{ $product->price }}" class="editable" data-column="price">
+                </td>
+                <td>
+                    <select class="editable" data-column="category_id">
+                        @foreach($categories as $category)
+                        <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </td>
+
+                <!-- Taille et stock dynamique comme Excel -->
+                <td>
+                    <div class="sizes-container">
+                        @php
+                            $sizes = ['S', 'M', 'L', 'XL']; // Tailles en dur
+                        @endphp
+                        <div class="size-column">
+                            @foreach($sizes as $size)
+                                <input type="text" value="{{ $size }}" class="editable" data-column="size" data-product-id="{{ $product->id }}">
+                            @endforeach
+                        </div>
+                    </div>
+                    <button class="add-size-btn">Ajouter Taille</button>
+                    <button class="remove-size-btn">Supprimer Taille</button>
+                </td>
+
+                <td>
+                    <div class="depot-container">
+                        @php
+                            $depots = [
+                                ['name' => 'Paris', 'color' => 'red'],
+                                ['name' => 'Depot 1', 'color' => 'blue'],
+                                ['name' => 'Depot 2', 'color' => 'green'],
+                                ['name' => 'Depot 3', 'color' => 'yellow']
+                            ];
+                        @endphp
+                        @foreach($depots as $depot)
+                            <div class="depot-box" style="background-color: {{ $depot['color'] }};" title="{{ $depot['name'] }}">
+                                {{ $depot['name'] }}
+                                <input type="number" placeholder="Ex. 5" class="depot-quantity" data-depot="{{ $depot['name'] }}" data-product-id="{{ $product->id }}">
+                            </div>
+                        @endforeach
+                    </div>
+                </td>
+
+                <td>
+                    <button class="delete-product" data-product-id="{{ $product->id }}">Delete</button>
+                </td>
+            </tr>
             @endforeach
         </tbody>
     </table>
 
     <script>
-        // Function to update size options based on product type selection
-        document.getElementById('product_type').addEventListener('change', function() {
-            const sizeSelect = document.getElementById('size');
-            const selectedType = this.value;
-
-            let sizeOptions = [];
-            if (selectedType === 'Clothing') {
-                sizeOptions = ['XS', 'S', 'M', 'L', 'XL'];
-            } else if (selectedType === 'Pants') {
-                sizeOptions = ['32', '34', '36', '38', '40'];
-            } else if (selectedType === 'Shoes') {
-                sizeOptions = ['36', '37', '38', '39', '40', '41', '42'];
-            }
-
-            // Clear current options
-            sizeSelect.innerHTML = '';
-
-            // Add new options
-            sizeOptions.forEach(function(size) {
-                const option = document.createElement('option');
-                option.value = size;
-                option.textContent = size;
-                sizeSelect.appendChild(option);
+        // Ajout de taille
+        document.querySelectorAll('.add-size-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const sizeColumn = this.closest('td').querySelector('.size-column');
+                const newSizeInput = document.createElement('input');
+                newSizeInput.type = 'text';
+                newSizeInput.value = 'New Size';  // Valeur par défaut
+                sizeColumn.appendChild(newSizeInput);
             });
         });
 
-        // Trigger change event to populate initial sizes
-        document.getElementById('product_type').dispatchEvent(new Event('change'));
-    </script>
+        // Suppression de taille
+        document.querySelectorAll('.remove-size-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const sizeColumn = this.closest('td').querySelector('.size-column');
+                if (sizeColumn.children.length > 0) {
+                    sizeColumn.removeChild(sizeColumn.lastElementChild); // Retirer la dernière taille ajoutée
+                }
+            });
+        });
 
+        // Handle inline updates for price, category, size, and quantity
+        document.querySelectorAll('.editable').forEach(function(element) {
+            element.addEventListener('change', function() {
+                const row = this.closest('tr');
+                const productId = row.getAttribute('data-product-id');
+                const column = this.getAttribute('data-column');
+                const value = this.value;
+
+                // Send AJAX request to update the field
+                let url = `/products/${productId}`;
+                let data = { [column]: value };
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product updated successfully');
+                    } else {
+                        alert('Error updating product');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+
+        // Handle product deletion
+        document.querySelectorAll('.delete-product').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+
+                // Send AJAX request to delete the product
+                fetch(`/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product deleted successfully');
+                        this.closest('tr').remove();
+                    } else {
+                        alert('Error deleting product');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    </script>
 </body>
 </html>

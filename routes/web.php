@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\DepotController;
 
 
 // Page d'accueil
@@ -76,3 +77,6 @@ Route::prefix('api')->group(function () {
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
 });
+
+// Routes pour les dépôts
+Route::resource('depots', DepotController::class);
