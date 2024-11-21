@@ -80,3 +80,5 @@ Route::prefix('api')->group(function () {
 
 // Routes pour les dépôts
 Route::resource('depots', DepotController::class);
+
+Route::post('/update-stock', [StockController::class, 'update'])->name('stock.update');

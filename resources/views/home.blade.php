@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Stocks</title>
+    <title>Gestion de Stock</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,16 +12,18 @@
             padding: 20px;
         }
 
-        h1, h2 {
+        h1 {
+            text-align: center;
             color: #333;
         }
 
         .menu {
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .menu a {
-            margin-right: 20px;
+            margin: 0 15px;
             text-decoration: none;
             font-weight: bold;
             color: #333;
@@ -32,254 +34,327 @@
             border-collapse: collapse;
             margin-top: 20px;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         table th, table td {
             border: 1px solid #ddd;
+            text-align: center;
             padding: 10px;
-            text-align: left;
         }
 
         table th {
             background-color: #f2f2f2;
+            color: #333;
         }
 
-        table tr:nth-child(even) {
-            background-color: #f9f9f9;
+        table th.colored-header {
+            color: black;
         }
 
-        input[type="text"], input[type="number"], select {
-            width: 100%;
-            border: none;
+        .depot-red { background-color: #FF9999; }    /* Lyon */
+        .depot-blue { background-color: #99CCFF; }   /* Paris */
+        .depot-orange { background-color: #FFCC99; } /* Colombier */
+        .depot-yellow { background-color: #FFFF99; } /* Pouilly */
+        .depot-pink { background-color: #FF99CC; }   /* Vaulx en Velin */
+
+        .editable-cell {
             background-color: transparent;
-            text-align: left;
+            border: none;
+            text-align: center;
             outline: none;
+            width: 100%;
         }
 
-        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        .editable-cell:focus {
             background-color: #e8f0fe;
         }
 
-        button {
+        .save-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 8px 15px;
-            cursor: pointer;
             border-radius: 4px;
+            cursor: pointer;
         }
 
-        button:hover {
+        .save-btn:hover {
             background-color: #45a049;
-        }
-
-        .depot-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .depot-box {
-            width: 100px;
-            height: 100px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-        }
-
-        .sizes-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 10px;
-        }
-
-        .size-column {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .size-column input {
-            width: 60px;
-        }
-
-        .add-size-btn {
-            background-color: #008CBA;
-        }
-
-        .remove-size-btn {
-            background-color: #f44336;
         }
     </style>
 </head>
 <body>
 
-    <h1>Gérer Stock et Vêtements</h1>
+<h1>Gestion de Stock</h1>
 
-    <div class="menu">
-        <a href="#chaussures">Chaussures</a>
-        <a href="#tshirts">T-shirts</a>
-        <a href="#pulls">Pulls</a>
-    </div>
+<div class="menu">
+    <a href="#chaussures">Chaussures</a>
+    <a href="#tshirts">T-shirts</a>
+    <a href="#pulls">Pulls</a>
+</div>
 
-    <!-- Product Management Table -->
-    <h2 id="chaussures">Chaussures</h2>
-    <table id="products-table">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Prix</th>
-                <th>Categorie</th>
-                <th>Taille</th>
-                <th>Stock par dépôt</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($products as $product)
-            <tr data-product-id="{{ $product->id }}">
-                <td>
-                    <input type="text" value="{{ $product->name }}" class="editable" data-column="name">
-                </td>
-                <td>
-                    <input type="number" value="{{ $product->price }}" class="editable" data-column="price">
-                </td>
-                <td>
-                    <select class="editable" data-column="category_id">
-                        @foreach($categories as $category)
-                        <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>
-                            {{ $category->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </td>
+<h2 id="chaussures">Chaussures</h2>
 
-                <!-- Taille et stock dynamique comme Excel -->
-                <td>
-                    <div class="sizes-container">
-                        @php
-                            $sizes = ['S', 'M', 'L', 'XL']; // Tailles en dur
-                        @endphp
-                        <div class="size-column">
-                            @foreach($sizes as $size)
-                                <input type="text" value="{{ $size }}" class="editable" data-column="size" data-product-id="{{ $product->id }}">
-                            @endforeach
-                        </div>
-                    </div>
-                    <button class="add-size-btn">Ajouter Taille</button>
-                    <button class="remove-size-btn">Supprimer Taille</button>
-                </td>
-
-                <td>
-                    <div class="depot-container">
-                        @php
-                            $depots = [
-                                ['name' => 'Paris', 'color' => 'red'],
-                                ['name' => 'Depot 1', 'color' => 'blue'],
-                                ['name' => 'Depot 2', 'color' => 'green'],
-                                ['name' => 'Depot 3', 'color' => 'yellow']
-                            ];
-                        @endphp
-                        @foreach($depots as $depot)
-                            <div class="depot-box" style="background-color: {{ $depot['color'] }};" title="{{ $depot['name'] }}">
-                                {{ $depot['name'] }}
-                                <input type="number" placeholder="Ex. 5" class="depot-quantity" data-depot="{{ $depot['name'] }}" data-product-id="{{ $product->id }}">
-                            </div>
-                        @endforeach
-                    </div>
-                </td>
-
-                <td>
-                    <button class="delete-product" data-product-id="{{ $product->id }}">Delete</button>
-                </td>
-            </tr>
+<table>
+    <thead>
+        <!-- Ligne d'entête (Modèles par dépôt) -->
+        <tr>
+            <th rowspan="2">Taille</th>
+            @foreach($depots as $depot)
+                @foreach($products as $product)
+                    <th class="colored-header depot-{{ $depot['color'] }}">
+                        {{ $product->name }}
+                    </th>
+                @endforeach
             @endforeach
-        </tbody>
-    </table>
+        </tr>
+        <tr>
+            @foreach($depots as $depot)
+                @foreach($products as $product)
+                    <th class="colored-header depot-{{ $depot['color'] }}">{{ $depot['name'] }}</th>
+                @endforeach
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Tailles et stocks -->
+        @foreach($sizes as $size)
+            <tr>
+                <td>{{ $size }}</td>
+                @foreach($depots as $depot)
+                    @foreach($products as $product)
+                        <td>
+                            <input 
+                                type="number" 
+                                class="editable-cell" 
+                                value="{{ $stocks[$size][$depot['name']][$product->id] ?? 0 }}" 
+                                data-size="{{ $size }}" 
+                                data-depot="{{ $depot['name'] }}" 
+                                data-product-id="{{ $product->id }}"
+                            >
+                        </td>
+                    @endforeach
+                @endforeach
+            </tr>
+        @endforeach
+    </tbody>
+</table>
 
-    <script>
-        // Ajout de taille
-        document.querySelectorAll('.add-size-btn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const sizeColumn = this.closest('td').querySelector('.size-column');
-                const newSizeInput = document.createElement('input');
-                newSizeInput.type = 'text';
-                newSizeInput.value = 'New Size';  // Valeur par défaut
-                sizeColumn.appendChild(newSizeInput);
+<button class="save-btn">Enregistrer les modifications</button>
+
+<script>
+    document.querySelector('.save-btn').addEventListener('click', function() {
+        const cells = document.querySelectorAll('.editable-cell');
+        const updates = [];
+
+        cells.forEach(cell => {
+            updates.push({
+                size: cell.getAttribute('data-size'),
+                depot: cell.getAttribute('data-depot'),
+                product_id: cell.getAttribute('data-product-id'),
+                value: cell.value
             });
         });
 
-        // Suppression de taille
-        document.querySelectorAll('.remove-size-btn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const sizeColumn = this.closest('td').querySelector('.size-column');
-                if (sizeColumn.children.length > 0) {
-                    sizeColumn.removeChild(sizeColumn.lastElementChild); // Retirer la dernière taille ajoutée
-                }
+        fetch('/update-stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify(updates),
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Stocks mis à jour avec succès');
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour :', error);
+        });
+    });
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Stock</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .menu {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .menu a {
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            text-align: center;
+            padding: 10px;
+        }
+
+        table th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        table th.colored-header {
+            color: black;
+        }
+
+        .depot-red { background-color: #FF9999; }    /* Lyon */
+        .depot-blue { background-color: #99CCFF; }   /* Paris */
+        .depot-orange { background-color: #FFCC99; } /* Colombier */
+        .depot-yellow { background-color: #FFFF99; } /* Pouilly */
+        .depot-pink { background-color: #FF99CC; }   /* Vaulx en Velin */
+
+        .editable-cell {
+            background-color: transparent;
+            border: none;
+            text-align: center;
+            outline: none;
+            width: 100%;
+        }
+
+        .editable-cell:focus {
+            background-color: #e8f0fe;
+        }
+
+        .save-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Gestion de Stock</h1>
+
+<div class="menu">
+    <a href="#chaussures">Chaussures</a>
+    <a href="#tshirts">T-shirts</a>
+    <a href="#pulls">Pulls</a>
+</div>
+
+<h2 id="chaussures">Chaussures</h2>
+
+<table>
+    <thead>
+        <!-- Ligne d'entête (Modèles par dépôt) -->
+        <tr>
+            <th rowspan="2">Taille</th>
+            @foreach($depots as $depot)
+                @foreach($products as $product)
+                    <th class="colored-header depot-{{ $depot['color'] }}">
+                        {{ $product->name }}
+                    </th>
+                @endforeach
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($depots as $depot)
+                @foreach($products as $product)
+                    <th class="colored-header depot-{{ $depot['color'] }}">{{ $depot['name'] }}</th>
+                @endforeach
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Tailles et stocks -->
+        @foreach($sizes as $size)
+            <tr>
+                <td>{{ $size }}</td>
+                @foreach($depots as $depot)
+                    @foreach($products as $product)
+                        <td>
+                            <input 
+                                type="number" 
+                                class="editable-cell" 
+                                value="{{ $stocks[$size][$depot['name']][$product->id] ?? 0 }}" 
+                                data-size="{{ $size }}" 
+                                data-depot="{{ $depot['name'] }}" 
+                                data-product-id="{{ $product->id }}"
+                            >
+                        </td>
+                    @endforeach
+                @endforeach
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
+<button class="save-btn">Enregistrer les modifications</button>
+
+<script>
+    document.querySelector('.save-btn').addEventListener('click', function() {
+        const cells = document.querySelectorAll('.editable-cell');
+        const updates = [];
+
+        cells.forEach(cell => {
+            updates.push({
+                size: cell.getAttribute('data-size'),
+                depot: cell.getAttribute('data-depot'),
+                product_id: cell.getAttribute('data-product-id'),
+                value: cell.value
             });
         });
 
-        // Handle inline updates for price, category, size, and quantity
-        document.querySelectorAll('.editable').forEach(function(element) {
-            element.addEventListener('change', function() {
-                const row = this.closest('tr');
-                const productId = row.getAttribute('data-product-id');
-                const column = this.getAttribute('data-column');
-                const value = this.value;
-
-                // Send AJAX request to update the field
-                let url = `/products/${productId}`;
-                let data = { [column]: value };
-
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Product updated successfully');
-                    } else {
-                        alert('Error updating product');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
+        fetch('/update-stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify(updates),
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Stocks mis à jour avec succès');
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour :', error);
         });
+    });
+</script>
 
-        // Handle product deletion
-        document.querySelectorAll('.delete-product').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const productId = this.getAttribute('data-product-id');
-
-                // Send AJAX request to delete the product
-                fetch(`/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Product deleted successfully');
-                        this.closest('tr').remove();
-                    } else {
-                        alert('Error deleting product');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        });
-    </script>
 </body>
 </html>

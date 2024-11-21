@@ -9,33 +9,61 @@ use Illuminate\Http\Request;
 class StockController extends Controller
 {
     /**
-     * Mettre à jour la quantité de stock pour un produit spécifique.
+     * Afficher le stock pour un produit spécifique.
      */
-    public function update(Request $request, $product_id) {
-        // Valider la quantité
-        $validated = $request->validate([
-            'quantity' => 'required|integer|min:0', // Validation de la quantité
+    public function show($product_id) {
+        $product = Product::with('stock')->findOrFail($product_id);
+        return view('stocks.show', compact('product'));
+    }
+
+    /**
+     * Mettre à jour le stock pour un produit spécifique.
+     */
+    public function update(Request $request, $product_id)
+{
+    // Valider les données reçues
+    $validated = $request->validate([
+        'size' => 'required|numeric', // Taille obligatoire
+        'depot' => 'required|string', // Dépôt obligatoire
+        'quantity' => 'required|integer|min:0', // Quantité obligatoire
+    ]);
+
+    // Trouver le produit correspondant
+    $product = Product::findOrFail($product_id);
+
+    // Rechercher un stock existant pour ce produit, taille et dépôt
+    $stock = Stock::where('product_id', $product->id)
+        ->where('size', $validated['size'])
+        ->where('depot', $validated['depot'])
+        ->first();
+
+    if ($stock) {
+        // Si le stock existe, mettre à jour la quantité
+        $stock->quantity += $validated['quantity']; // Ajouter à la quantité existante
+        $stock->save();
+    } else {
+        // Si le stock n'existe pas, créer une nouvelle entrée
+        Stock::create([
+            'product_id' => $product->id,
+            'size' => $validated['size'],
+            'depot' => $validated['depot'],
+            'quantity' => $validated['quantity'],
         ]);
+    }
 
-        // Trouver le produit correspondant
-        $product = Product::findOrFail($product_id);
+    // Rediriger avec un message de succès
+    return redirect()->route('home')->with('success', 'Stock updated successfully!');
+}
 
-        // Vérifier si un stock existe déjà pour ce produit
-        $stock = $product->stock;
 
-        if ($stock) {
-            // Si un stock existe, mettre à jour la quantité
-            $stock->quantity = $validated['quantity'];
-            $stock->save();
-        } else {
-            // Si aucun stock n'existe, créer un nouveau stock pour ce produit
-            Stock::create([
-                'product_id' => $product->id,
-                'quantity' => $validated['quantity']
-            ]);
-        }
+    /**
+     * Préparer la vue pour éditer le stock.
+     */
+    public function edit($product_id) {
+        $product = Product::with('stock')->findOrFail($product_id);
+        $depots = ['Paris', 'Colombier', 'Vaulx en Velin', 'Pouilly', 'Lyon'];
+        $sizes = range(35, 50);
 
-        // Rediriger vers la page d'accueil après la mise à jour
-        return redirect()->route('home')->with('success', 'Stock updated successfully!');
+        return view('stocks.edit', compact('product', 'depots', 'sizes'));
     }
 }

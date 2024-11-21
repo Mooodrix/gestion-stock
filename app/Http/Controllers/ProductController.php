@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Category; // Ajout pour gérer les catégories
+use App\Models\Category;
+use App\Models\Stock;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -18,23 +19,47 @@ class ProductController extends Controller
         // Vérifier si un filtre de catégorie est appliqué
         $categoryFilter = $request->get('category_id');
 
-        // Récupérer les produits avec leurs catégories, et appliquer un filtre de catégorie si présent
+        // Récupérer les produits et appliquer un filtre de catégorie si présent
         $products = Product::with('category')
             ->when($categoryFilter, function ($query) use ($categoryFilter) {
-                return $query->where('category_id', $categoryFilter); // Appliquer le filtre
+                return $query->where('category_id', $categoryFilter);
             })
-            ->orderBy('category_id')  // Trier par catégorie
+            ->orderBy('category_id')
             ->get();
 
-        // Passer les produits et les catégories à la vue
-        return view('home', compact('products', 'categories'));
+        // Gestion des dépôts (en dur pour l'exemple)
+        $depots = [
+            ['name' => 'Paris', 'color' => 'blue'],
+            ['name' => 'Colombier', 'color' => 'orange'],
+            ['name' => 'Vaulx en Velin', 'color' => 'pink'],
+            ['name' => 'Pouilly', 'color' => 'yellow'],
+            ['name' => 'Lyon', 'color' => 'red'],
+        ];
+
+        // Tailles disponibles (35 à 50)
+        $sizes = range(35, 50);
+
+        // Préparer les données des stocks
+        $stocks = [];
+        foreach ($sizes as $size) {
+            foreach ($depots as $depot) {
+                foreach ($products as $product) {
+                    $stocks[$size][$depot['name']][$product->id] = Stock::where('product_id', $product->id)
+                        ->where('size', $size)
+                        ->where('depot', $depot['name'])
+                        ->value('quantity') ?? 0;
+                }
+            }
+        }
+
+        // Retourner la vue avec les données
+        return view('home', compact('products', 'categories', 'depots', 'sizes', 'stocks'));
     }
 
     /**
      * Affiche un produit spécifique (API)
      */
     public function show($id) {
-        // Retourne les informations d'un produit avec sa catégorie
         return response()->json(Product::with('category')->findOrFail($id));
     }
 
@@ -42,59 +67,54 @@ class ProductController extends Controller
      * Ajouter un nouveau produit (API)
      */
     public function store(Request $request) {
-        // Validation des données envoyées
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id', // Vérifier que la catégorie existe
-            'description' => 'nullable|string|max:1000', // Description est facultative
-            'size' => 'required|string|max:10',  // Taille obligatoire, chaîne de caractères
+            'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string|max:1000',
+            'size' => 'required|string|max:10',
         ]);
-    
-        // Générer le SKU basé sur le nom et la taille (utilisation de `strtolower` pour normaliser)
+
+        // Générer le SKU
         $sku = strtolower(str_replace(' ', '-', $validated['name'])) . '-' . strtolower($validated['size']);
-    
-        // Créer le produit avec les données validées
-        $product = Product::create([
+
+        // Créer le produit
+        Product::create([
             'name' => $validated['name'],
             'price' => $validated['price'],
             'category_id' => $validated['category_id'],
-            'description' => $validated['description'] ?? null,  // Assurez-vous que description est incluse et soit null si vide
-            'size' => $validated['size'],  // Taille ajoutée ici
-            'sku' => $sku,  // SKU généré
+            'description' => $validated['description'] ?? null,
+            'size' => $validated['size'],
+            'sku' => $sku,
         ]);
-    
-        // Rediriger vers la page d'accueil après ajout
+
         return redirect()->route('home')->with('success', 'Product added successfully!');
     }
-    
+
     /**
      * Mettre à jour un produit (API)
      */
     public function update(Request $request, $id) {
-        // Validation des données de mise à jour
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000', // Description facultative
+            'description' => 'nullable|string|max:1000',
             'price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
-            'size' => 'required|string|max:10', // Taille obligatoire, chaîne de caractères
+            'size' => 'required|string|max:10',
         ]);
-    
-        // Trouver le produit à mettre à jour
+
         $product = Product::findOrFail($id);
-        
-        // Mettre à jour les informations du produit
+
+        // Mise à jour du produit
         $product->update([
             'name' => $validated['name'],
             'price' => $validated['price'],
             'category_id' => $validated['category_id'],
-            'description' => $validated['description'] ?? null,  // Gérer la description (nullable)
-            'size' => $validated['size'],  // Taille mise à jour
-            'sku' => strtolower(str_replace(' ', '-', $validated['name'])) . '-' . strtolower($validated['size']), // Mise à jour du SKU
+            'description' => $validated['description'] ?? null,
+            'size' => $validated['size'],
+            'sku' => strtolower(str_replace(' ', '-', $validated['name'])) . '-' . strtolower($validated['size']),
         ]);
-    
-        // Retourner une réponse JSON avec le produit mis à jour
+
         return response()->json($product);
     }
 
@@ -102,13 +122,9 @@ class ProductController extends Controller
      * Supprimer un produit (API)
      */
     public function destroy($id) {
-        // Trouver le produit à supprimer
         $product = Product::findOrFail($id);
-        
-        // Supprimer le produit
         $product->delete();
 
-        // Rediriger vers la page d'accueil
-        return redirect()->route('home');
+        return redirect()->route('home')->with('success', 'Product deleted successfully!');
     }
 }
