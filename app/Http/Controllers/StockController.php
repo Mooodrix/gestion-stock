@@ -11,6 +11,9 @@ class StockController extends Controller
 {
     $updates = $request->json()->all();
 
+    \Log::debug('Données reçues pour mise à jour des stocks:', $updates);
+
+
     try {
         foreach ($updates as $update) {
             // Vérification des données
