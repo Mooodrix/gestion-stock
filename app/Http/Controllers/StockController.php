@@ -2,68 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Stock;
-use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Stock;  // ou votre modèle de stock
 
 class StockController extends Controller
 {
-    /**
-     * Afficher le stock pour un produit spécifique.
-     */
-    public function show($product_id) {
-        $product = Product::with('stock')->findOrFail($product_id);
-        return view('stocks.show', compact('product'));
-    }
-
-    /**
-     * Mettre à jour le stock pour un produit spécifique.
-     */
-    public function update(Request $request, $product_id)
+    public function updateStock(Request $request)
 {
-    // Valider les données reçues
-    $validated = $request->validate([
-        'size' => 'required|numeric', // Taille obligatoire
-        'depot' => 'required|string', // Dépôt obligatoire
-        'quantity' => 'required|integer|min:0', // Quantité obligatoire
-    ]);
+    $updates = $request->json()->all();
 
-    // Trouver le produit correspondant
-    $product = Product::findOrFail($product_id);
+    try {
+        foreach ($updates as $update) {
+            // Vérification des données
+            if (!isset($update['product_id'], $update['depot'], $update['size'], $update['quantity'])) {
+                throw new \Exception("Données manquantes pour la mise à jour du stock.");
+            }
 
-    // Rechercher un stock existant pour ce produit, taille et dépôt
-    $stock = Stock::where('product_id', $product->id)
-        ->where('size', $validated['size'])
-        ->where('depot', $validated['depot'])
-        ->first();
+            $stock = Stock::where('product_id', $update['product_id'])
+                          ->where('depot', $update['depot'])
+                          ->where('size', $update['size'])
+                          ->first();
 
-    if ($stock) {
-        // Si le stock existe, mettre à jour la quantité
-        $stock->quantity += $validated['quantity']; // Ajouter à la quantité existante
-        $stock->save();
-    } else {
-        // Si le stock n'existe pas, créer une nouvelle entrée
-        Stock::create([
-            'product_id' => $product->id,
-            'size' => $validated['size'],
-            'depot' => $validated['depot'],
-            'quantity' => $validated['quantity'],
-        ]);
+            if ($stock) {
+                $stock->quantity = $update['quantity'];
+                $stock->save();
+            } else {
+                Stock::create([
+                    'product_id' => $update['product_id'],
+                    'depot' => $update['depot'],
+                    'size' => $update['size'],
+                    'quantity' => $update['quantity'],
+                ]);
+            }
+        }
+        
+        return response()->json(['message' => 'Stocks mis à jour avec succès.']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erreur lors de la mise à jour des stocks : ' . $e->getMessage()], 500);
     }
-
-    // Rediriger avec un message de succès
-    return redirect()->route('home')->with('success', 'Stock updated successfully!');
 }
 
-
-    /**
-     * Préparer la vue pour éditer le stock.
-     */
-    public function edit($product_id) {
-        $product = Product::with('stock')->findOrFail($product_id);
-        $depots = ['Paris', 'Colombier', 'Vaulx en Velin', 'Pouilly', 'Lyon'];
-        $sizes = range(35, 50);
-
-        return view('stocks.edit', compact('product', 'depots', 'sizes'));
-    }
 }
